@@ -38,9 +38,12 @@ func main() {
 
 	//######################## Sever ##############################//
 	fileServer := http.FileServer(http.Dir("./web/assets/"))
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	mux.Handle("/assets/", http.StripPrefix("/assets", fileServer))
 	mux.Handle("/", handlers.Home(app))
 	mux.Handle("/new_post", handlers.NewPost(app, 1))
+
+	//######################## Api #################################//
+	mux.Handle("/api/posts", handlers.PostsApi(app, true, 1))
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
 	// that the server uses the same network address and routes as before, and set

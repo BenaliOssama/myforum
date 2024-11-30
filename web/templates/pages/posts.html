@@ -3,7 +3,34 @@
         <button class="new-post-button" onclick="window.location.href='/new_post'">New Post</button>
         <button class="new-post-button" onclick="window.location.href='/categories'">Categories</button>
     </div>
+    <div>
+        <div class="registration">
+        <button id="login-logout">Logout</button>
+        <button id="register">Register</button>
+    </div>
 {{end}}
 
 {{define "main"}}
+        <div class="container">
+    </div>
+    <script type="module">
+        import { GetData, logoutEvent } from './assets/script.js';
+        let postIds = JSON.parse('{{.Posts}}')
+        GetData(postIds);
+        const log = document.getElementById('login-logout')
+        const register = document.getElementById('register')
+        if (document.cookie) {
+            log.textContent = 'Logout'
+            register.remove()
+            logoutEvent(log)
+        } else {
+            log.textContent = 'Login'
+            register.addEventListener('click', async () => {
+                window.location.href = '/register';
+            })
+            log.addEventListener('click', async () => {
+                window.location.href = '/login';
+            })
+        }
+    </script>
 {{end}}

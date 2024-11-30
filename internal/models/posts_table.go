@@ -73,6 +73,77 @@ func LinkPostWithCategory(transaction *sql.Tx, categories []string, postId int64
 	}
 	return nil
 }
+func Read_Post(id int, db *sql.DB, isUser bool, userId int) *Post {
+	query := `SELECT * FROM posts WHERE id = ?`
+	row := db.QueryRow(query, id)
+	Post := &Post{}
+	err := row.Scan(&Post.PostId, &Post.UserId, &Post.Title, &Post.Content, &Post.LikeCount, &Post.DislikeCount, &Post.Created_At)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	if !isUser {
+		Post.Clicked = false
+		Post.DisClicked = false
+	} else {
+		Post.Clicked, Post.DisClicked = isLiked(db, userId, Post.PostId, "post")
+	}
+	Post.UserName, err = GetUserName(int(Post.UserId), db)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return Post
+}
+
+func isLiked(db *sql.DB, userId int, postId int, target_type string) (bool, bool) {
+	// Query to check for likes or dislikes for the given user and post.
+	var query string
+	if target_type == "post" {
+		query = `SELECT type FROM likes WHERE user_id = ? AND post_id = ? AND target_type = ? LIMIT 1`
+	} else if target_type == "comment" {
+		query = `SELECT type FROM likes WHERE user_id = ? AND comment_id = ? AND target_type = ? LIMIT 1`
+	}
+
+	var reactionType string
+	err := db.QueryRow(query, userId, postId, target_type).Scan(&reactionType)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No interaction found.
+			fmt.Println("\033[31m", err, "\033[0m")
+			return false, false
+		}
+		// Log error if needed and handle it appropriately.
+		fmt.Println("Error   likes:", err)
+		return false, false
+	}
+
+	// Determine the type of interaction.
+	switch reactionType {
+	case "like":
+		return true, false
+	case "dislike":
+		return false, true
+	default:
+		return false, false
+	}
+}
+
+func GetUserName(id int, db *sql.DB) (string, error) {
+	var name string
+	err := db.QueryRow("SELECT username FROM users WHERE id = ?", id).Scan(&name)
+	if err != nil {
+		return "", err
+	}
+	return name, nil
+}
+
+func Get_Last(db *sql.DB) int {
+	query := `SELECT MAX(id) FROM posts `
+	row := db.QueryRow(query)
+	result := 0
+	_ = row.Scan(&result)
+	return result
+}
 
 // // This will return a specific snippet based on its id.
 // func (m *ForumModel) Get(id int) (*Post, error) {
