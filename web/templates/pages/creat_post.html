@@ -1,0 +1,20 @@
+{{define "header"}}{{end}}
+
+{{define "main"}}
+    <h1>Create New Post</h1>
+    <form action="/New_Post" method="post">
+        <h2>Title</h2>
+        <textarea name="title" placeholder="Write your title" required></textarea>
+
+        <h2>Content</h2>
+        <textarea name="content" placeholder="Write your content here" required></textarea>
+
+        <h2>Category</h2>
+            {{range .Categories}}
+            <label>
+            <input type="checkbox" name="category" value="{{.Id}}">{{.Name}}
+            </label>
+            {{end}}
+        <button type="submit">Submit</button>
+    </form>
+{{end}}
