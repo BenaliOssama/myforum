@@ -1,11 +1,14 @@
 package config
 
-
-import "log"
+import (
+	"log"
+	modules "myforum/internal/modules"
+)
 
 type Application struct {
-	ErrorLog *log.Logger
-	InfoLog *log.Logger
+	ErrorLog   *log.Logger
+	InfoLog    *log.Logger
+	ForumModel *modules.ForumModel
 }
 
 var App = &Application{}

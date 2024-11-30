@@ -9,7 +9,7 @@ import (
 func Home(app *config.Application) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
-			notFound(w)
+			app.NotFound(w)
 			return
 		}
 		// Define template path
@@ -22,7 +22,7 @@ func Home(app *config.Application) http.HandlerFunc {
 		// Parse template files
 		tmpl, err := template.ParseFiles(files...)
 		if err != nil {
-			serverError(w, app, err) // Use the serverError() helper.
+			app.ServerError(w, err) // Use the serverError() helper.
 			return
 		}
 
@@ -38,7 +38,7 @@ func Home(app *config.Application) http.HandlerFunc {
 		// Execute the template
 		err = tmpl.ExecuteTemplate(w, "base", feed)
 		if err != nil {
-			serverError(w, app, err) // Use the serverError() helper.
+			app.ServerError(w, err) // Use the serverError() helper.
 			return
 		}
 
