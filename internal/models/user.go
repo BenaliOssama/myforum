@@ -1,4 +1,4 @@
-package modules
+package models
 
 import (
 	"time"
@@ -14,7 +14,7 @@ type User struct {
 }
 
 // This will insert a new snippet into the database.
-func (m *ForumModel) InsertPost(title string, content string, expires int) (int, error) {
+func (m *ForumModel) dInsertPost(title string, content string, expires int) (int, error) {
 	return 0, nil
 }
 

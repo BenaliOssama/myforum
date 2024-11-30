@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"html/template"
 	"myforum/internal/config"
 	"net/http"
-	"text/template"
 )
 
 func Home(app *config.Application) http.HandlerFunc {

@@ -2,13 +2,13 @@ package config
 
 import (
 	"log"
-	modules "myforum/internal/modules"
+	"myforum/internal/models"
 )
 
 type Application struct {
 	ErrorLog   *log.Logger
 	InfoLog    *log.Logger
-	ForumModel *modules.ForumModel
+	ForumModel *models.ForumModel
 }
 
 var App = &Application{}
