@@ -35,4 +35,10 @@ w.Header().Get("Cache-Control")
 // Retrieve a slice of all values for the "Cache-Control" header.
 w.Header().Values("Cache-Control")
 ```
-
+## further reading
+### Disable FileServer Directory Listings
+https://www.alexedwards.net/blog/disable-http-fileserver-directory-listings
+### spread packages
+https://gist.github.com/alexedwards/5cd712192b4831058b21
+### debug.stack()
+https://pkg.go.dev/runtime/debug#Stack
