@@ -1,4 +1,4 @@
 run:
-	go run . main.go
+	go run . cmd/web/main.go
 push:
 	git push origin
