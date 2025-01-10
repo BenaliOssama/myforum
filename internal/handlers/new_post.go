@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"myforum/internal/config"
 	models "myforum/internal/models"
 	"net/http"
 	"time"
 )
 
-func NewPost(app *config.Application, userId int) http.HandlerFunc {
+func (app *Application) NewPost(userId int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			path := "./web/templates/"
@@ -91,6 +90,6 @@ func NewPost(app *config.Application, userId int) http.HandlerFunc {
 		// }
 		// app.InfoLog.Println("end insertion")
 		// Redirect the user to the relevant page for the snippet.
-		//http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+		// http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
 	})
 }

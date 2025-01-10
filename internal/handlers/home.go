@@ -2,11 +2,10 @@ package handlers
 
 import (
 	"html/template"
-	"myforum/internal/config"
 	"net/http"
 )
 
-func Home(app *config.Application) http.HandlerFunc {
+func (app *Application) Home() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			app.NotFound(w)

@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	config "myforum/internal/config"
-	handlers "myforum/internal/handlers"
 	models "myforum/internal/models"
 	"net/http"
 	"os"
@@ -17,33 +15,36 @@ import (
 
 func main() {
 	//###################### config ##############################//
+	// --> flags
 	addr := flag.String("addr", "localhost:8080", "HTTP network address")
 	dsn := flag.String("dns", "db/data.db", "MySQL data source name")
 	flag.Parse()
 
+	// --> logers
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
+	// --> database
 	db, err := models.OnpenDB(*dsn, infoLog)
+	defer db.Close()
 	if err != nil {
 		errorLog.Fatal(err)
 	}
-	app := &config.Application{
+
+	// --> server
+	app := &handler.Application{
 		ErrorLog:   errorLog,
 		InfoLog:    infoLog,
 		ForumModel: &models.ForumModel{DB: db},
 	}
 
+	// --> multiplexer
 	mux := http.NewServeMux()
 
 	//######################## Sever ##############################//
-	fileServer := http.FileServer(http.Dir("./web/assets/"))
-	mux.Handle("/assets/", http.StripPrefix("/assets", fileServer))
-	mux.Handle("/", handlers.Home(app))
-	mux.Handle("/new_post", handlers.NewPost(app, 1))
 
 	//######################## Api #################################//
-	mux.Handle("/api/posts", handlers.PostsApi(app, true, 1))
+	//mux.Handle("/api/posts", handlers.PostsApi(app, true, 1))
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
 	// that the server uses the same network address and routes as before, and set
@@ -58,5 +59,5 @@ func main() {
 	app.InfoLog.Printf("Starting server on http://%s", *addr)
 	// Call the ListenAndServe() method on our new http.Server struct.
 	err = srv.ListenAndServe()
-	app.ErrorLog.Fatal(err)
+	errorLog.Fatal(err)
 }

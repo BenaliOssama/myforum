@@ -1,10 +1,8 @@
 package models
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
-	"strconv"
 )
 
 // Define a Snippet type to hold the data for an individual snippet. Notice how
@@ -40,11 +38,6 @@ func (m *ForumModel) InsertPost(post Post, categories []string) (int64, error) {
 	}
 
 	categories = append(categories, "2")
-	err = LinkPostWithCategory(transaction, categories, lastPostID, post.UserId)
-	if err != nil {
-		transaction.Rollback()
-		return 0, err
-	}
 	err = transaction.Commit()
 	if err != nil {
 		transaction.Rollback()
@@ -55,23 +48,11 @@ func (m *ForumModel) InsertPost(post Post, categories []string) (int64, error) {
 	return lastPostID, nil
 }
 
-
 func (m *ForumModel) Read_Post(id int) *Post {
 	query := `SELECT * FROM posts WHERE id = ?`
-	row := db.QueryRow(query, id)
+	row := m.DB.QueryRow(query, id)
 	Post := &Post{}
-	err := row.Scan(&Post.PostId, &Post.UserId, &Post.Title, &Post.Content, &Post.LikeCount, &Post.DislikeCount, &Post.Created_At)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	if !isUser {
-		Post.Clicked = false
-		Post.DisClicked = false
-	} else {
-		Post.Clicked, Post.DisClicked = isLiked(db, userId, Post.PostId, "post")
-	}
-	Post.UserName, err = GetUserName(int(Post.UserId), db)
+	err := row.Scan(&Post.PostId, &Post.Title, &Post.Content, &Post.LikeCount, &Post.DislikeCount, &Post.Created_At)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -1,4 +1,4 @@
-package handler
+package config
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 func (app *Application) ServerError(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	// errLog.Println(trace)
+	//errLog.Println(trace)
 	app.ErrorLog.Output(2, trace)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
