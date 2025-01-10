@@ -1,7 +1,17 @@
 # Documentation for Building MyForum
 
-## Server Configuration
+## project structure
+The cmd directory will contain the application-specific code for the executable applications
+in the project. For now we’ll have just one executable application — the web application —
+which will live under the cmd/web directory.
 
+The internal directory will contain the ancillary non-application-specific code used in the
+project. We’ll use it to hold potentially reusable code like validation helpers and the SQL
+database models for the project.
+
+any packages which live under this directory can only be imported by codeinside the parent of the internal directory
+
+## Server Configuration
 - If you omit the host (like we did with `:4000`), the server will listen on all your computer’s available network interfaces.
 
 - Because DefaultServeMux is a global variable, any package can access it and register a route
@@ -25,11 +35,4 @@ w.Header().Get("Cache-Control")
 // Retrieve a slice of all values for the "Cache-Control" header.
 w.Header().Values("Cache-Control")
 ```
-## project structure
-The cmd directory will contain the application-specific code for the executable applications
-in the project. For now we’ll have just one executable application — the web application —
-which will live under the cmd/web directory.
 
-The internal directory will contain the ancillary non-application-specific code used in the
-project. We’ll use it to hold potentially reusable code like validation helpers and the SQL
-database models for the project.
