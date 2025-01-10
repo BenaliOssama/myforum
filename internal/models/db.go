@@ -51,8 +51,7 @@ func createTables(db *sql.DB) error {
 	// transaction object just created, NOT the connection pool. Although we're
 	// using tx.Exec() here you can also use tx.Query() and tx.QueryRow() in
 	// exactly the same way.
-	_, err = tx.Exec(UsersTable + SessionsTable + LikesTable +
-		CommentsTable + PostsTable + CategoriesTable + PostCategoriesTable)
+	_, err = tx.Exec(PostsTable)
 	if err != nil {
 		return err
 	}
