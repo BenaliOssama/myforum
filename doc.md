@@ -35,6 +35,14 @@ w.Header().Get("Cache-Control")
 // Retrieve a slice of all values for the "Cache-Control" header.
 w.Header().Values("Cache-Control")
 ```
+
+## database
+Use the Prepare method to create a new prepared statement for the
+current connection pool. This returns a sql.Stmt object which represents
+the prepared statement.
+
+
+
 ## further reading
 ### Disable FileServer Directory Listings
 https://www.alexedwards.net/blog/disable-http-fileserver-directory-listings

@@ -1,0 +1,20 @@
+body{
+    background-color: rgb(230, 230, 230);
+}
+
+.snippet{
+    background-color: rgb(245, 245, 245);
+}
+
+table{
+    border: solid 2px black;
+    background-color: aquamarine;
+}
+
+tr{
+    border: solid 2px black;
+}
+
+td{
+    border: solid 2px black;
+}
