@@ -41,7 +41,20 @@ Use the Prepare method to create a new prepared statement for the
 current connection pool. This returns a sql.Stmt object which represents
 the prepared statement.
 
+## forms data
 
+In our code above, we accessed the form values via the r.PostForm map. But an alternative
+approach is to use the (subtly different) r.Form map.
+The r.PostForm map is populated only for POST , PATCH and PUT requests, and contains the
+form data from the request body.
+In contrast, the r.Form map is populated for all requests (irrespective of their HTTP method),
+and contains the form data from any request body and any query string parameters. So, if our
+form was submitted to /snippet/create?foo=bar , we could also get the value of the foo
+parameter by calling r.Form.Get("foo") . Note that in the event of a conflict, the request
+body value will take precedent over the query string parameter.
+Using the r.Form map can be useful if your application sends data in a HTML form and in the
+URL, or you have an application that is agnostic about how parameters are passed. But in ourcase those things aren’t applicable. We expect our form data to be sent in the request body
+only, so it’s for sensible for us to access it via r.PostForm .
 
 ## further reading
 ### Disable FileServer Directory Listings

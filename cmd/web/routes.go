@@ -12,7 +12,17 @@ func (app *application) routes() http.Handler {
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 	mux.HandleFunc("/", app.home)
 	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
+
+	mux.HandleFunc("/snippet/create", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			app.snippetCreate(w, r)
+		case http.MethodPost:
+			app.snippetCreatePost(w, r)
+		default:
+			app.clientError(w, http.StatusMethodNotAllowed)
+		}
+	})
 
 	// Pass the servemux as the 'next' parameter to the secureHeaders middleware.
 	// Because secureHeaders is just a function, and the function returns a
