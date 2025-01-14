@@ -7,17 +7,20 @@ import (
 	"net/http"
 	"os"
 	"text/template"
+	"time"
 
 	"myforum/internal/models"
+	"myforum/internal/sessions"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	snippets      *models.SnippetModel
-	templateCache map[string]*template.Template
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
+	sessionManager *sessions.Session
 }
 
 func main() {
@@ -51,11 +54,16 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	sessionManager := sessions.New()
+	sessionManager.DB = db
+	sessionManager.Lifetime = 12 * time.Hour
+
 	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		sessionManager: sessionManager,
 	}
 
 	srv := &http.Server{

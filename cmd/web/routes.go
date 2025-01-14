@@ -1,6 +1,8 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Update the signature for the routes() method so that it returns a
 // http.Handler instead of *http.ServeMux.
@@ -10,15 +12,25 @@ func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
+
+	// pass home through the middleware of sessions
+	home := app.sessionManager.LoadAndSave(http.HandlerFunc(app.home))
+	mux.Handle("/", home)
+
+	// pass through the middleware of sessions
+	snippetView := app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetView))
+	mux.Handle("/snippet/view", snippetView)
 
 	mux.HandleFunc("/snippet/create", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			app.snippetCreate(w, r)
+			// pass through the middleware of sessions
+			snippetCreate := app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetCreate))
+			snippetCreate.ServeHTTP(w, r)
 		case http.MethodPost:
-			app.snippetCreatePost(w, r)
+			// pass through the middleware of sessions
+			snippetCreatePost := app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetCreate))
+			snippetCreatePost.ServeHTTP(w, r)
 		default:
 			app.clientError(w, http.StatusMethodNotAllowed)
 		}
