@@ -1,3 +1,5 @@
+github.com/BenaliOssama/sessions v0.0.0-20250114153432-4d2d02c34b24 h1:mxttEL+XDT/YNczzVrUZuh4iWQTH/Qn2+a8lF4NjcfM=
+github.com/BenaliOssama/sessions v0.0.0-20250114153432-4d2d02c34b24/go.mod h1:hF3M6P4vwtcaAk8tWJnMUj8XSmiCyOnEjU/4W5zgw50=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/mattn/go-sqlite3 v1.14.24 h1:tpSp2G2KyMnnQu99ngJ47EIkWVmliIizyZBfPrBWDRM=
