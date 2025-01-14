@@ -31,3 +31,14 @@ INSERT INTO snippets (title, content, created, expires) VALUES (
 
 -- Add an index on the created column
 CREATE INDEX idx_snippets_created ON snippets(created);
+
+
+-- No "USE" statement in SQLite; just directly create the table in the active database
+CREATE TABLE sessions (
+    token CHAR(43) PRIMARY KEY,
+    data BLOB NOT NULL,
+    expiry TIMESTAMP NOT NULL
+);
+
+-- Create an index on the expiry column for faster queries
+CREATE INDEX sessions_expiry_idx ON sessions (expiry);
