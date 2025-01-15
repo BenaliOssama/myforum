@@ -84,6 +84,14 @@ func (s *Session) Load() error {
 }
 
 // Middleware to load and save sessions
+// LoadAndSave() middleware checks each
+// incoming request for a session cookie. If a session cookie is present,
+// it reads the session token
+// and retrieves the corresponding session data from the database
+// (while also checking that the
+// session hasn’t expired). It then adds the session data to the request
+// context so it can be used
+// in your handlers.
 func (s *Session) LoadAndSave(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var token string
