@@ -29,7 +29,7 @@ func (app *application) routes() http.Handler {
 			snippetCreate.ServeHTTP(w, r)
 		case http.MethodPost:
 			// pass through the middleware of sessions
-			snippetCreatePost := app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetCreate))
+			snippetCreatePost := app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetCreatePost))
 			snippetCreatePost.ServeHTTP(w, r)
 		default:
 			app.clientError(w, http.StatusMethodNotAllowed)

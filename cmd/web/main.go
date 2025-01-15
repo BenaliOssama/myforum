@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"myforum/internal/models"
+	"myforum/internal/sessions"
 
-	"github.com/BenaliOssama/sessions"
 	_ "github.com/mattn/go-sqlite3"
 )
 
