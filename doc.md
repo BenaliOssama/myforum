@@ -56,6 +56,15 @@ Using the r.Form map can be useful if your application sends data in a HTML form
 URL, or you have an application that is agnostic about how parameters are passed. But in ourcase those things aren’t applicable. We expect our form data to be sent in the request body
 only, so it’s for sensible for us to access it via r.PostForm .
 
+
+## sessions
+So, what happens in our application is that the LoadAndSave() middleware checks each
+incoming request for a session cookie. If a session cookie is present, it reads the session token
+and retrieves the corresponding session data from the database (while also checking that the
+session hasn’t expired). It then adds the session data to the request context so it can be used
+in your handlers.
+
+
 ## further reading
 ### Disable FileServer Directory Listings
 https://www.alexedwards.net/blog/disable-http-fileserver-directory-listings

@@ -13,15 +13,9 @@ func (app *application) routes() http.Handler {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	// // pass home through the middleware of sessions
-	home := app.sessionManager.LoadAndSave(http.HandlerFunc(app.home))
-	mux.Handle("/", home)
-
-	// pass through the middleware of sessions
-	snippetView := app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetView))
-	mux.Handle("/snippet/view", snippetView)
-
-	mux.HandleFunc("/snippet/create", func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/", app.sessionManager.LoadAndSave(http.HandlerFunc(app.home)))
+	mux.Handle("/snippet/view", app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetView)))
+	mux.Handle("/snippet/create", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			// pass through the middleware of sessions
@@ -34,7 +28,7 @@ func (app *application) routes() http.Handler {
 		default:
 			app.clientError(w, http.StatusMethodNotAllowed)
 		}
-	})
+	}))
 
 	// Pass the servemux as the 'next' parameter to the secureHeaders middleware.
 	// Because secureHeaders is just a function, and the function returns a
