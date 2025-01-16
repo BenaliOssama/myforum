@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -50,11 +51,16 @@ func (s *SessionManager) LoadAndSave(next http.Handler) http.Handler {
 		fmt.Println("in LoadAndSave")
 		ctx, err := s.loadSession(r.Context(), r)
 		if err != nil {
+			fmt.Println("err 1")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
+		fmt.Println("in context")
+		fmt.Println("cts:", ctx)
+		fmt.Println()
+		fmt.Println()
 		r = r.WithContext(ctx)
+		fmt.Println("out context")
 
 		next.ServeHTTP(w, r)
 
@@ -67,12 +73,19 @@ func (s *SessionManager) LoadAndSave(next http.Handler) http.Handler {
 func (s *SessionManager) loadSession(ctx context.Context, r *http.Request) (context.Context, error) {
 	token, err := s.getSessionToken(r)
 	if err != nil {
-		return nil, err
+		// Create new session token
+		fmt.Println("creating new session")
+		token = uuid.NewString()
+		data, _ := s.encodeSessionData(map[string]interface{}{})
+		err = s.Store.Commit(token, data, time.Now().Add(s.Lifetime))
+		if err != nil {
+			return nil, errors.New("cant commit new tocken to db")
+		}
 	}
-
+	fmt.Println("looking for tocken in database")
 	data, found, err := s.Store.Find(token)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("can't retrieve tocken from db")
 	}
 	if !found {
 		token = uuid.NewString()
@@ -80,7 +93,10 @@ func (s *SessionManager) loadSession(ctx context.Context, r *http.Request) (cont
 	}
 
 	fmt.Println("in load session")
-	sessionData, _ := s.decodeSessionData(data)
+	sessionData, err := s.decodeSessionData(data)
+	if err != nil {
+		fmt.Println("heeeeere")
+	}
 	fmt.Println("out load session")
 
 	ctx = context.WithValue(ctx, "session", sessionData)
@@ -96,10 +112,15 @@ func (s *SessionManager) saveSession(w http.ResponseWriter, r *http.Request) {
 	sessionData := r.Context().Value("session").(map[string]interface{})
 
 	token := r.Context().Value("token").(string)
-	data, _ := s.encodeSessionData(sessionData)
+	data, err := s.encodeSessionData(sessionData)
+	if err != nil {
+		fmt.Println("failed to encode data")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	expiry := time.Now().Add(s.Lifetime)
-	err := s.Store.Commit(token, data, expiry)
+	err = s.Store.Commit(token, data, expiry)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -112,7 +133,11 @@ func (s *SessionManager) saveSession(w http.ResponseWriter, r *http.Request) {
 		Expires: expiry,
 		Secure:  s.Cookie.Secure,
 	}
-
+	fmt.Println()
+	fmt.Println(cookie)
+	fmt.Println("SAAAAAAAAAAAAAAAAAAAAAVED")
+	fmt.Println()
+	fmt.Println()
 	http.SetCookie(w, cookie)
 }
 
@@ -120,7 +145,7 @@ func (s *SessionManager) saveSession(w http.ResponseWriter, r *http.Request) {
 func (s *SessionManager) getSessionToken(r *http.Request) (string, error) {
 	cookie, err := r.Cookie(s.Cookie.Name)
 	if err != nil {
-		return "", err
+		return "", errors.New("no session cookie found")
 	}
 
 	return cookie.Value, nil
