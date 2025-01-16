@@ -1,188 +1,242 @@
 package scs
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
-	"errors"
-	"fmt"
+	"log"
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/alexedwards/scs/v2/memstore"
 )
 
-// Store is the interface for session stores.
-type Store interface {
-	Delete(token string) error
-	Find(token string) ([]byte, bool, error)
-	Commit(token string, data []byte, expiry time.Time) error
-}
+// Deprecated: Session is a backwards-compatible alias for SessionManager.
+type Session = SessionManager
 
-// SessionManager holds the configuration settings for session management.
+// SessionManager holds the configuration settings for your sessions.
 type SessionManager struct {
+	// IdleTimeout controls the maximum length of time a session can be inactive
+	// before it expires. For example, some applications may wish to set this so
+	// there is a timeout after 20 minutes of inactivity. By default IdleTimeout
+	// is not set and there is no inactivity timeout.
+	IdleTimeout time.Duration
+
+	// Lifetime controls the maximum length of time that a session is valid for
+	// before it expires. The lifetime is an 'absolute expiry' which is set when
+	// the session is first created and does not change. The default value is 24
+	// hours.
 	Lifetime time.Duration
-	Store    Store
-	Cookie   SessionCookie
+
+	// Store controls the session store where the session data is persisted.
+	Store Store
+
+	// Cookie contains the configuration settings for session cookies.
+	Cookie SessionCookie
+
+	// Codec controls the encoder/decoder used to transform session data to a
+	// byte slice for use by the session store. By default session data is
+	// encoded/decoded using encoding/gob.
+	Codec Codec
+
+	// ErrorFunc allows you to control behavior when an error is encountered by
+	// the LoadAndSave middleware. The default behavior is for a HTTP 500
+	// "Internal Server Error" message to be sent to the client and the error
+	// logged using Go's standard logger. If a custom ErrorFunc is set, then
+	// control will be passed to this instead. A typical use would be to provide
+	// a function which logs the error and returns a customized HTML error page.
+	ErrorFunc func(http.ResponseWriter, *http.Request, error)
+
+	// HashTokenInStore controls whether or not to store the session token or a hashed version in the store.
+	HashTokenInStore bool
+
+	// contextKey is the key used to set and retrieve the session data from a
+	// context.Context. It's automatically generated to ensure uniqueness.
+	contextKey contextKey
 }
 
 // SessionCookie contains the configuration settings for session cookies.
 type SessionCookie struct {
-	Name   string
-	Path   string
+	// Name sets the name of the session cookie. It should not contain
+	// whitespace, commas, colons, semicolons, backslashes, the equals sign or
+	// control characters as per RFC6265. The default cookie name is "session".
+	// If your application uses two different sessions, you must make sure that
+	// the cookie name for each is unique.
+	Name string
+
+	// Domain sets the 'Domain' attribute on the session cookie. By default
+	// it will be set to the domain name that the cookie was issued from.
+	Domain string
+
+	// HttpOnly sets the 'HttpOnly' attribute on the session cookie. The
+	// default value is true.
+	HttpOnly bool
+
+	// Path sets the 'Path' attribute on the session cookie. The default value
+	// is "/". Passing the empty string "" will result in it being set to the
+	// path that the cookie was issued from.
+	Path string
+
+	// Persist sets whether the session cookie should be persistent or not
+	// (i.e. whether it should be retained after a user closes their browser).
+	// The default value is true, which means that the session cookie will not
+	// be destroyed when the user closes their browser and the appropriate
+	// 'Expires' and 'MaxAge' values will be added to the session cookie. If you
+	// want to only persist some sessions (rather than all of them), then set this
+	// to false and call the RememberMe() method for the specific sessions that you
+	// want to persist.
+	Persist bool
+
+	// SameSite controls the value of the 'SameSite' attribute on the session
+	// cookie. By default this is set to 'SameSite=Lax'. If you want no SameSite
+	// attribute or value in the session cookie then you should set this to 0.
+	SameSite http.SameSite
+
+	// Secure sets the 'Secure' attribute on the session cookie. The default
+	// value is false. It's recommended that you set this to true and serve all
+	// requests over HTTPS in production environments.
+	// See https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Session_Management_Cheat_Sheet.md#transport-layer-security.
 	Secure bool
 }
 
-// New creates a new SessionManager instance.
+// New returns a new session manager with the default options. It is safe for
+// concurrent use.
 func New() *SessionManager {
-	return &SessionManager{
-		Lifetime: 24 * time.Hour,
+	s := &SessionManager{
+		IdleTimeout: 0,
+		Lifetime:    24 * time.Hour,
+		Store:       memstore.New(),
+		Codec:       GobCodec{},
+		ErrorFunc:   defaultErrorFunc,
+		contextKey:  generateContextKey(),
 		Cookie: SessionCookie{
-			Name:   "session",
-			Path:   "/",
-			Secure: false,
+			Name:     "session",
+			Domain:   "",
+			HttpOnly: true,
+			Path:     "/",
+			Persist:  true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
 		},
 	}
+	return s
 }
 
-// LoadAndSave provides middleware to load and save session data.
+// LoadAndSave provides middleware which automatically loads and saves session
+// data for the current request, and communicates the session token to and from
+// the client in a cookie.
 func (s *SessionManager) LoadAndSave(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("in LoadAndSave")
-		ctx, err := s.loadSession(r.Context(), r)
+		w.Header().Add("Vary", "Cookie")
+
+		var token string
+		cookie, err := r.Cookie(s.Cookie.Name)
+		if err == nil { // if cookie found
+			token = cookie.Value
+		}
+		// Load retrieves the session data for the given token from the session store,
+		// and returns a new context.Context containing the session data. If no matching
+		// token is found then this will create a new session.
+		ctx, err := s.Load(r.Context(), token)
 		if err != nil {
-			fmt.Println("err 1")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			s.ErrorFunc(w, r, err)
 			return
 		}
-		fmt.Println("in context")
-		fmt.Println("cts:", ctx)
-		fmt.Println()
-		fmt.Println()
-		r = r.WithContext(ctx)
-		fmt.Println("out context")
 
-		next.ServeHTTP(w, r)
+		sr := r.WithContext(ctx)
 
-		fmt.Println("out LoadAndSave")
-		s.saveSession(w, r)
+		sw := &sessionResponseWriter{
+			ResponseWriter: w,
+			request:        sr,
+			sessionManager: s,
+		}
+
+		next.ServeHTTP(sw, sr)
+
+		if !sw.written {
+			s.commitAndWriteSessionCookie(w, sr)
+		}
 	})
 }
 
-// loadSession retrieves session data from the store and adds it to the context.
-func (s *SessionManager) loadSession(ctx context.Context, r *http.Request) (context.Context, error) {
-	token, err := s.getSessionToken(r)
-	if err != nil {
-		// Create new session token
-		fmt.Println("creating new session")
-		token = uuid.NewString()
-		data, _ := s.encodeSessionData(map[string]interface{}{})
-		err = s.Store.Commit(token, data, time.Now().Add(s.Lifetime))
+func (s *SessionManager) commitAndWriteSessionCookie(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	switch s.Status(ctx) {
+	case Modified:
+		token, expiry, err := s.Commit(ctx)
 		if err != nil {
-			return nil, errors.New("cant commit new tocken to db")
+			s.ErrorFunc(w, r, err)
+			return
 		}
-	}
-	fmt.Println("looking for tocken in database")
-	data, found, err := s.Store.Find(token)
-	if err != nil {
-		return nil, errors.New("can't retrieve tocken from db")
-	}
-	if !found {
-		token = uuid.NewString()
-		data, _ = s.encodeSessionData(map[string]interface{}{})
-	}
 
-	fmt.Println("in load session")
-	sessionData, err := s.decodeSessionData(data)
-	if err != nil {
-		fmt.Println("heeeeere")
+		s.WriteSessionCookie(ctx, w, token, expiry)
+	case Destroyed:
+		s.WriteSessionCookie(ctx, w, "", time.Time{})
 	}
-	fmt.Println("out load session")
-
-	ctx = context.WithValue(ctx, "session", sessionData)
-	ctx = context.WithValue(ctx, "token", token)
-	return ctx, nil
-
-	//return context.WithValue(ctx, "session", sessionData).WithValue("token", token), nil
-	//return context.WithValue(ctx, "session", sessionData), nil
 }
 
-// saveSession saves the session and writes the session cookie to the response.
-func (s *SessionManager) saveSession(w http.ResponseWriter, r *http.Request) {
-	sessionData := r.Context().Value("session").(map[string]interface{})
-
-	token := r.Context().Value("token").(string)
-	data, err := s.encodeSessionData(sessionData)
-	if err != nil {
-		fmt.Println("failed to encode data")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	expiry := time.Now().Add(s.Lifetime)
-	err = s.Store.Commit(token, data, expiry)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+// WriteSessionCookie writes a cookie to the HTTP response with the provided
+// token as the cookie value and expiry as the cookie expiry time. The expiry
+// time will be included in the cookie only if the session is set to persist
+// or has had RememberMe(true) called on it. If expiry is an empty time.Time
+// struct (so that it's IsZero() method returns true) the cookie will be
+// marked with a historical expiry time and negative max-age (so the browser
+// deletes it).
+//
+// Most applications will use the LoadAndSave() middleware and will not need to
+// use this method.
+func (s *SessionManager) WriteSessionCookie(ctx context.Context, w http.ResponseWriter, token string, expiry time.Time) {
 	cookie := &http.Cookie{
-		Name:    s.Cookie.Name,
-		Value:   token,
-		Path:    s.Cookie.Path,
-		Expires: expiry,
-		Secure:  s.Cookie.Secure,
-	}
-	fmt.Println()
-	fmt.Println(cookie)
-	fmt.Println("SAAAAAAAAAAAAAAAAAAAAAVED")
-	fmt.Println()
-	fmt.Println()
-	http.SetCookie(w, cookie)
-}
-
-// getSessionToken retrieves the session token from the request cookie.
-func (s *SessionManager) getSessionToken(r *http.Request) (string, error) {
-	cookie, err := r.Cookie(s.Cookie.Name)
-	if err != nil {
-		return "", errors.New("no session cookie found")
+		Name:     s.Cookie.Name,
+		Value:    token,
+		Path:     s.Cookie.Path,
+		Domain:   s.Cookie.Domain,
+		Secure:   s.Cookie.Secure,
+		HttpOnly: s.Cookie.HttpOnly,
+		SameSite: s.Cookie.SameSite,
 	}
 
-	return cookie.Value, nil
-}
-
-// encodeSessionData encodes session data to binary.
-func (s *SessionManager) encodeSessionData(data map[string]interface{}) ([]byte, error) {
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(data)
-	return buf.Bytes(), err
-}
-
-// decodeSessionData decodes binary data to session data.
-func (s *SessionManager) decodeSessionData(data []byte) (map[string]interface{}, error) {
-	var sessionData map[string]interface{}
-	buf := bytes.NewReader(data)
-	err := gob.NewDecoder(buf).Decode(&sessionData)
-	return sessionData, err
-}
-
-// Put adds a key-value pair to the session data.
-func (s *SessionManager) Put(ctx context.Context, key string, value interface{}) context.Context {
-	sessionData := ctx.Value("session").(map[string]interface{})
-	sessionData[key] = value
-
-	return ctx
-}
-
-// PopString removes a key-value pair and returns the value as a string.
-func (s *SessionManager) PopString(ctx context.Context, key string) string {
-	sessionData := ctx.Value("session").(map[string]interface{})
-	value, ok := sessionData[key]
-	if !ok {
-		return ""
+	if expiry.IsZero() {
+		cookie.Expires = time.Unix(1, 0)
+		cookie.MaxAge = -1
+	} else if s.Cookie.Persist || s.GetBool(ctx, "__rememberMe") {
+		cookie.Expires = time.Unix(expiry.Unix()+1, 0)        // Round up to the nearest second.
+		cookie.MaxAge = int(time.Until(expiry).Seconds() + 1) // Round up to the nearest second.
 	}
 
-	delete(sessionData, key)
+	w.Header().Add("Set-Cookie", cookie.String())
+	w.Header().Add("Cache-Control", `no-cache="Set-Cookie"`)
+}
 
-	return value.(string)
+func defaultErrorFunc(w http.ResponseWriter, r *http.Request, err error) {
+	log.Output(2, err.Error())
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
+type sessionResponseWriter struct {
+	http.ResponseWriter
+	request        *http.Request
+	sessionManager *SessionManager
+	written        bool
+}
+
+func (sw *sessionResponseWriter) Write(b []byte) (int, error) {
+	if !sw.written {
+		sw.sessionManager.commitAndWriteSessionCookie(sw.ResponseWriter, sw.request)
+		sw.written = true
+	}
+
+	return sw.ResponseWriter.Write(b)
+}
+
+func (sw *sessionResponseWriter) WriteHeader(code int) {
+	if !sw.written {
+		sw.sessionManager.commitAndWriteSessionCookie(sw.ResponseWriter, sw.request)
+		sw.written = true
+	}
+
+	sw.ResponseWriter.WriteHeader(code)
+}
+
+func (sw *sessionResponseWriter) Unwrap() http.ResponseWriter {
+	return sw.ResponseWriter
 }
