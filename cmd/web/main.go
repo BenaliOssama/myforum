@@ -9,11 +9,11 @@ import (
 	"text/template"
 	"time" // New import
 
-	"github.com/alexedwards/scs/sqlite3store"
+	//"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"
 
-	// New import
 	"myforum/internal/models"
+	"myforum/internal/store"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -62,7 +62,7 @@ func main() {
 	// lifetime of 12 hours (so that sessions automatically expire 12 hours
 	// after first being created).
 	sessionManager := scs.New()
-	sessionManager.Store = sqlite3store.New(db)
+	sessionManager.Store = store.New(db)
 
 	sessionManager.Lifetime = 12 * time.Hour
 
