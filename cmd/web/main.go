@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"os"
 	"text/template"
-	"time"
+	"time" // New import
 
+	"github.com/alexedwards/scs/sqlite3store"
+	"github.com/alexedwards/scs/v2"
+
+	// New import
 	"myforum/internal/models"
-	"myforum/internal/sessions"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -20,7 +23,7 @@ type application struct {
 	infoLog        *log.Logger
 	snippets       *models.SnippetModel
 	templateCache  map[string]*template.Template
-	sessionManager *sessions.Session
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -54,8 +57,13 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
-	sessionManager := sessions.New()
-	sessionManager.DB = db
+	// Use the scs.New() function to initialize a new session manager. Then we
+	// configure it to use our MySQL database as the session store, and set a
+	// lifetime of 12 hours (so that sessions automatically expire 12 hours
+	// after first being created).
+	sessionManager := scs.New()
+	sessionManager.Store = sqlite3store.New(db)
+
 	sessionManager.Lifetime = 12 * time.Hour
 
 	app := &application{

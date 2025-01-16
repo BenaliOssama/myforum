@@ -13,7 +13,7 @@ func (app *application) routes() http.Handler {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	// pass home through the middleware of sessions
+	// // pass home through the middleware of sessions
 	home := app.sessionManager.LoadAndSave(http.HandlerFunc(app.home))
 	mux.Handle("/", home)
 
