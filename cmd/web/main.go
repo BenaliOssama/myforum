@@ -9,6 +9,8 @@ import (
 	"text/template"
 	"time" // New import
 
+	// these two imports i tried break them down
+	// so i can undestand them
 	//"github.com/alexedwards/scs/sqlite3store"
 	//"github.com/alexedwards/scs/v2"
 
