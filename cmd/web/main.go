@@ -10,9 +10,10 @@ import (
 	"time" // New import
 
 	//"github.com/alexedwards/scs/sqlite3store"
-	"github.com/alexedwards/scs/v2"
+	//"github.com/alexedwards/scs/v2"
 
 	"myforum/internal/models"
+	scs "myforum/internal/sessions"
 	"myforum/internal/store"
 
 	_ "github.com/mattn/go-sqlite3"
