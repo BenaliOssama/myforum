@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/alexedwards/scs/v2/memstore"
 )
 
 // Deprecated: Session is a backwards-compatible alias for SessionManager.
@@ -99,11 +97,11 @@ type SessionCookie struct {
 
 // New returns a new session manager with the default options. It is safe for
 // concurrent use.
-func New() *SessionManager {
+func New(store Store) *SessionManager {
 	s := &SessionManager{
 		IdleTimeout: 0,
 		Lifetime:    24 * time.Hour,
-		Store:       memstore.New(),
+		Store:       store,
 		Codec:       GobCodec{},
 		ErrorFunc:   defaultErrorFunc,
 		contextKey:  generateContextKey(),

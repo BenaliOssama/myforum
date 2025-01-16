@@ -62,8 +62,8 @@ func main() {
 	// configure it to use our MySQL database as the session store, and set a
 	// lifetime of 12 hours (so that sessions automatically expire 12 hours
 	// after first being created).
-	sessionManager := scs.New()
-	sessionManager.Store = store.New(db)
+	sessionManager := scs.New(store.New(db))
+	//sessionManager.Store = store.New(db)
 
 	sessionManager.Lifetime = 12 * time.Hour
 
