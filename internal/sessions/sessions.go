@@ -82,7 +82,13 @@ func (s *SessionManager) loadSession(ctx context.Context, r *http.Request) (cont
 	fmt.Println("in load session")
 	sessionData, _ := s.decodeSessionData(data)
 	fmt.Println("out load session")
-	return context.WithValue(ctx, "session", sessionData), nil
+
+	ctx = context.WithValue(ctx, "session", sessionData)
+	ctx = context.WithValue(ctx, "token", token)
+	return ctx, nil
+
+	//return context.WithValue(ctx, "session", sessionData).WithValue("token", token), nil
+	//return context.WithValue(ctx, "session", sessionData), nil
 }
 
 // saveSession saves the session and writes the session cookie to the response.
