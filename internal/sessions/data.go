@@ -380,3 +380,15 @@ func (s *SessionManager) Exists(ctx context.Context, key string) bool {
 
 	return exists
 }
+
+// GetInt returns the int value for a given key from the session data. The
+// zero value for an int (0) is returned if the key does not exist or the
+// value could not be type asserted to an int.
+func (s *SessionManager) GetInt(ctx context.Context, key string) int {
+	val := s.Get(ctx, key)
+	i, ok := val.(int)
+	if !ok {
+		return 0
+	}
+	return i
+}

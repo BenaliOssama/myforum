@@ -13,17 +13,17 @@ func (app *application) routes() http.Handler {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	mux.Handle("/", app.sessionManager.LoadAndSave(http.HandlerFunc(app.home)))
-	mux.Handle("/snippet/view", app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetView)))
+	mux.Handle("/", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.home))))
+	mux.Handle("/snippet/view", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.snippetView))))
 	mux.Handle("/user/signup", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			// pass through the middleware of sessions
-			userSignup := app.sessionManager.LoadAndSave(http.HandlerFunc(app.userSignup))
+			userSignup := app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.userSignup)))
 			userSignup.ServeHTTP(w, r)
 		case http.MethodPost:
 			// pass through the middleware of sessions
-			userSignUpPost := app.sessionManager.LoadAndSave(http.HandlerFunc(app.userSignupPost))
+			userSignUpPost := app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.userSignupPost)))
 			userSignUpPost.ServeHTTP(w, r)
 		default:
 			app.clientError(w, http.StatusMethodNotAllowed)
@@ -33,11 +33,11 @@ func (app *application) routes() http.Handler {
 		switch r.Method {
 		case http.MethodGet:
 			// pass through the middleware of sessions
-			userLogin := app.sessionManager.LoadAndSave(http.HandlerFunc(app.userLogin))
+			userLogin := app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.userLogin)))
 			userLogin.ServeHTTP(w, r)
 		case http.MethodPost:
 			// pass through the middleware of sessions
-			userLoginPost := app.sessionManager.LoadAndSave(http.HandlerFunc(app.userLoginPost))
+			userLoginPost := app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.userLoginPost)))
 			userLoginPost.ServeHTTP(w, r)
 		default:
 			app.clientError(w, http.StatusMethodNotAllowed)
@@ -48,18 +48,18 @@ func (app *application) routes() http.Handler {
 		switch r.Method {
 		case http.MethodGet:
 			// pass through the middleware of sessions
-			snippetCreate := app.sessionManager.LoadAndSave(app.requireAuthentication(http.HandlerFunc(app.snippetCreate)))
+			snippetCreate := app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.snippetCreate))))
 			snippetCreate.ServeHTTP(w, r)
 		case http.MethodPost:
 			// pass through the middleware of sessions
-			snippetCreatePost := app.sessionManager.LoadAndSave(app.requireAuthentication(http.HandlerFunc(app.snippetCreatePost)))
+			snippetCreatePost := app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.snippetCreatePost))))
 			snippetCreatePost.ServeHTTP(w, r)
 		default:
 			app.clientError(w, http.StatusMethodNotAllowed)
 		}
 	}))
 	// Add the five new routes, all of which use our 'dynamic' middleware chain.
-	mux.Handle("/user/logout", app.sessionManager.LoadAndSave(app.requireAuthentication(http.HandlerFunc(app.userLogoutPost))))
+	mux.Handle("/user/logout", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.userLogoutPost)))))
 	// Pass the servemux as the 'next' parameter to the secureHeaders middleware.
 	// Because secureHeaders is just a function, and the function returns a
 	// http.Handler we don't need to do anything else.

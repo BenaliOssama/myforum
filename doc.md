@@ -71,6 +71,7 @@ in your handlers.
 2022/02/17 18:51:29 wrote cert.pem
 2022/02/17 18:51:29 wrote key.pem
 
+basic CSRF attack can be found here: https://www.gnucitizen.org/blog/csrf-demystified/
 ## further reading
 ### Disable FileServer Directory Listings
 https://www.alexedwards.net/blog/disable-http-fileserver-directory-listings
@@ -80,3 +81,5 @@ https://gist.github.com/alexedwards/5cd712192b4831058b21
 https://pkg.go.dev/runtime/debug#Stack
 ### http/2
 https://www.youtube.com/watch?v=FARQMJndUn0&themeRefresh=1
+### passing dependencies
+https://gist.github.com/alexedwards/5cd712192b4831058b21
