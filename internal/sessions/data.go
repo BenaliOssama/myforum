@@ -316,3 +316,67 @@ func (s *SessionManager) doStoreCommit(ctx context.Context, token string, b []by
 	}
 	return s.Store.Commit(token, b, expiry)
 }
+
+// RenewToken updates the session data to have a new session token while
+// retaining the current session data. The session lifetime is also reset and
+// the session data status will be set to Modified.
+//
+// The old session token and accompanying data are deleted from the session store.
+//
+// To mitigate the risk of session fixation attacks, it's important that you call
+// RenewToken before making any changes to privilege levels (e.g. login and
+// logout operations). See https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Session_Management_Cheat_Sheet.md#renew-the-session-id-after-any-privilege-level-change
+// for additional information.
+func (s *SessionManager) RenewToken(ctx context.Context) error {
+	sd := s.getSessionDataFromContext(ctx)
+
+	sd.mu.Lock()
+	defer sd.mu.Unlock()
+
+	if sd.token != "" {
+		err := s.doStoreDelete(ctx, sd.token)
+		if err != nil {
+			return err
+		}
+	}
+
+	newToken, err := generateToken()
+	if err != nil {
+		return err
+	}
+
+	sd.token = newToken
+	sd.deadline = time.Now().Add(s.Lifetime).UTC()
+	sd.status = Modified
+
+	return nil
+}
+
+// Remove deletes the given key and corresponding value from the session data.
+// The session data status will be set to Modified. If the key is not present
+// this operation is a no-op.
+func (s *SessionManager) Remove(ctx context.Context, key string) {
+	sd := s.getSessionDataFromContext(ctx)
+
+	sd.mu.Lock()
+	defer sd.mu.Unlock()
+
+	_, exists := sd.values[key]
+	if !exists {
+		return
+	}
+
+	delete(sd.values, key)
+	sd.status = Modified
+}
+
+// Exists returns true if the given key is present in the session data.
+func (s *SessionManager) Exists(ctx context.Context, key string) bool {
+	sd := s.getSessionDataFromContext(ctx)
+
+	sd.mu.Lock()
+	_, exists := sd.values[key]
+	sd.mu.Unlock()
+
+	return exists
+}
