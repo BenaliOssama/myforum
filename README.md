@@ -7,7 +7,6 @@
 - Simple and efficient session management using SQLite.
 - Built with minimal external dependencies to make it easier to learn and understand.
 
-## Project Structure
 
 ## Project Structure
 
@@ -17,6 +16,14 @@
 - `/internal/store/` - Contains the logic for interacting with the SQLite3 database, including storing and retrieving data for sessions and snippets.
 - `/internal/validator/` - Provides validation functionality for user input, ensuring that data adheres to the correct format before being processed.
 
+## security 
+## Generating Certificates
+
+To generate TLS certificates for localhost, run the following command:
+
+```bash
+$ go run (path to go source code...)/go/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
+```
 ## Motivation
 
 This project was inspired by Alex Edwards' "Let's Go!" book and his original **SnippetBox** project. It is a simplified, functional implementation of the concepts he introduced, with a specific focus on:

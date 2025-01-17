@@ -64,6 +64,12 @@ and retrieves the corresponding session data from the database (while also check
 session hasn’t expired). It then adds the session data to the request context so it can be used
 in your handlers.
 
+## security
+```bash
+    go run /usr/local/go/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
+```
+2022/02/17 18:51:29 wrote cert.pem
+2022/02/17 18:51:29 wrote key.pem
 
 ## further reading
 ### Disable FileServer Directory Listings
