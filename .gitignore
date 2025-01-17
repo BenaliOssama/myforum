@@ -1,2 +1,5 @@
 tmp
 db/data.db
+cert.pem
+key.pem
+tls/

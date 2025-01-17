@@ -42,3 +42,17 @@ CREATE TABLE sessions (
 
 -- Create an index on the expiry column for faster queries
 CREATE INDEX sessions_expiry_idx ON sessions (expiry);
+
+
+
+-- SQLite doesn't use the USE statement. The database is specified when opening the connection.
+
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    hashed_password TEXT NOT NULL,
+    created DATETIME NOT NULL
+);
+
+CREATE UNIQUE INDEX users_uc_email ON users (email);

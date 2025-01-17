@@ -29,7 +29,36 @@ func (app *application) routes() http.Handler {
 			app.clientError(w, http.StatusMethodNotAllowed)
 		}
 	}))
-
+	mux.Handle("/user/signup", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			// pass through the middleware of sessions
+			userSignup := app.sessionManager.LoadAndSave(http.HandlerFunc(app.userSignup))
+			userSignup.ServeHTTP(w, r)
+		case http.MethodPost:
+			// pass through the middleware of sessions
+			userSignUpPost := app.sessionManager.LoadAndSave(http.HandlerFunc(app.userSignupPost))
+			userSignUpPost.ServeHTTP(w, r)
+		default:
+			app.clientError(w, http.StatusMethodNotAllowed)
+		}
+	}))
+	mux.Handle("/user/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			// pass through the middleware of sessions
+			userLogin := app.sessionManager.LoadAndSave(http.HandlerFunc(app.userLogin))
+			userLogin.ServeHTTP(w, r)
+		case http.MethodPost:
+			// pass through the middleware of sessions
+			userLoginPost := app.sessionManager.LoadAndSave(http.HandlerFunc(app.userLoginPost))
+			userLoginPost.ServeHTTP(w, r)
+		default:
+			app.clientError(w, http.StatusMethodNotAllowed)
+		}
+	}))
+	// Add the five new routes, all of which use our 'dynamic' middleware chain.
+	mux.HandleFunc("/user/logout", app.userLogoutPost)
 	// Pass the servemux as the 'next' parameter to the secureHeaders middleware.
 	// Because secureHeaders is just a function, and the function returns a
 	// http.Handler we don't need to do anything else.

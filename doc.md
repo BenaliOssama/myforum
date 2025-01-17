@@ -78,3 +78,5 @@ https://www.alexedwards.net/blog/disable-http-fileserver-directory-listings
 https://gist.github.com/alexedwards/5cd712192b4831058b21
 ### debug.stack()
 https://pkg.go.dev/runtime/debug#Stack
+### http/2
+https://www.youtube.com/watch?v=FARQMJndUn0&themeRefresh=1
