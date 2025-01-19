@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"os"
 	"text/template"
-	"time" // New import
+	"time"
 
-	// these two imports i tried break them down
+	// these two imports i tried breaking them down
 	// so i can undestand them
 	//"github.com/alexedwards/scs/sqlite3store"
 	//"github.com/alexedwards/scs/v2"
@@ -36,24 +36,21 @@ func main() {
 	dsn := flag.String("dsn", "db/data.db", "sqlite data source name")
 	flag.Parse()
 
+	// in case i want to save the logs to a file
 	/*f, err := os.OpenFile("/tmp/info.log", os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
 	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)*/
+	
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	// To keep the main() function tidy I've put the code for creating a connection
-	// pool into the separate openDB() function below. We pass openDB() the DSN
-	// from the command-line flag.
 	db, err := openDB(*dsn)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
-	// We also defer a call to db.Close(), so that the connection pool is closed
-	// before the main() function exits.
 	defer db.Close()
 
 	// Initialize a new template cache...
@@ -66,9 +63,11 @@ func main() {
 	// configure it to use our MySQL database as the session store, and set a
 	// lifetime of 12 hours (so that sessions automatically expire 12 hours
 	// after first being created).
-	sessionManager := scs.New(store.New(db))
+	sessionStore := store.New(db)
+	sessionManager := scs.New(sessionStore)
 	//sessionManager.Store = store.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+
 	// Make sure that the Secure attribute is set on our session cookies.
 	// Setting this means that the cookie will only be sent by a user's web
 	// browser when a HTTPS connection is being used (and won't be sent over an
@@ -97,28 +96,16 @@ func main() {
 		ErrorLog:  errorLog,
 		Handler:   app.routes(),
 		TLSConfig: tlsConfig,
-		// Add Idle, Read and Write timeouts to the server.
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
 	infoLog.Printf("Starting server on https://localhost%s", *addr)
+
 	// Use the ListenAndServeTLS() method to start the HTTPS server. We
 	// pass in the paths to the TLS certificate and corresponding private key as
 	// the two parameters.
 	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(err)
-}
-
-// for a given DSN.
-func openDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dsn)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Ping(); err != nil {
-		return nil, err
-	}
-	return db, nil
 }

@@ -2,11 +2,24 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 	"time"
 )
+
+// for a given DSN.
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", dsn)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
+}
 
 // The serverError helper writes an error message and stack trace to the errorLog,
 // then sends a generic 500 Internal Server Error response to the user.
@@ -78,9 +91,10 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 
 // // Return true if the current request is from an authenticated user, otherwise
 // // return false.
-// func (app *application) isAuthenticated(r *http.Request) bool {
-// 	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
-// }
+//
+//	func (app *application) isAuthenticated(r *http.Request) bool {
+//		return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+//	}
 func (app *application) isAuthenticated(r *http.Request) bool {
 	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
 	if !ok {
