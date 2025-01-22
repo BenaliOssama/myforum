@@ -1,20 +1,30 @@
-body{
-    background-color: rgb(230, 230, 230);
+header {
+    display: flex;
+    text-align: center;
+    justify-content: center;
 }
 
-.snippet{
-    background-color: rgb(245, 245, 245);
+nav {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
 }
 
-table{
-    border: solid 2px black;
-    background-color: aquamarine;
+
+a {
+    text-decoration: none;
+    color: #006787;
 }
 
-tr{
-    border: solid 2px black;
+main {
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
+    text-align: center;
 }
 
-td{
-    border: solid 2px black;
+table {
+    width: 100%;
 }
+
+@media screen and (min-width: 800px) {}
