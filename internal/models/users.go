@@ -3,10 +3,8 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"strings"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -44,11 +42,8 @@ func (m *UserModel) Insert(name, email, password string) error {
 		// whether or not the error relates to our users_uc_email key by
 		// checking if the error code equals 1062 and the contents of the error
 		// message string. If it does, we return an ErrDuplicateEmail error.
-		var mySQLError *mysql.MySQLError
-		if errors.As(err, &mySQLError) {
-			if mySQLError.Number == 1062 && strings.Contains(mySQLError.Message, "users_uc_email") {
-				return ErrDuplicateEmail
-			}
+		if err.Error() == "UNIQUE constraint failed: users.email" {
+			return ErrDuplicateEmail
 		}
 		return err
 	}
