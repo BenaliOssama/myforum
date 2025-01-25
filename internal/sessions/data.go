@@ -3,7 +3,6 @@ package scs
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"sync"
@@ -52,14 +51,14 @@ func newSessionData(lifetime time.Duration) *sessionData {
 // use this method.
 func (s *SessionManager) Load(ctx context.Context, token string) (context.Context, error) {
 	if _, ok := ctx.Value(s.contextKey).(*sessionData); ok {
-		return ctx, nil
+		return ctx, nil // if session exist skip
 	}
 
 	if token == "" {
-		return s.addSessionDataToContext(ctx, newSessionData(s.Lifetime)), nil
+		return s.addSessionDataToContext(ctx, newSessionData(s.Lifetime)), nil //  handle messing session
 	}
 
-	b, found, err := s.doStoreFind(ctx, token)
+	b, found, err := s.doStoreFind(token)
 	if err != nil {
 		return nil, err
 	} else if !found {
@@ -171,7 +170,7 @@ func (s *SessionManager) Pop(ctx context.Context, key string) interface{} {
 func (s *SessionManager) MergeSession(ctx context.Context, token string) error {
 	sd := s.getSessionDataFromContext(ctx)
 
-	b, found, err := s.doStoreFind(ctx, token)
+	b, found, err := s.doStoreFind(token)
 	if err != nil {
 		return err
 	} else if !found {
@@ -240,10 +239,6 @@ func (s *SessionManager) PopString(ctx context.Context, key string) string {
 
 type contextKey string
 
-func (s *SessionManager) addSessionDataToContext(ctx context.Context, sd *sessionData) context.Context {
-	return context.WithValue(ctx, s.contextKey, sd)
-}
-
 func (s *SessionManager) getSessionDataFromContext(ctx context.Context) *sessionData {
 	c, ok := ctx.Value(s.contextKey).(*sessionData)
 	if !ok {
@@ -261,11 +256,6 @@ func generateToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-func hashToken(token string) string {
-	hash := sha256.Sum256([]byte(token))
-	return base64.RawURLEncoding.EncodeToString(hash[:])
-}
-
 var (
 	contextKeyID      uint64
 	contextKeyIDMutex = &sync.Mutex{}
@@ -279,9 +269,6 @@ func generateContextKey() contextKey {
 }
 
 func (s *SessionManager) doStoreDelete(ctx context.Context, token string) (err error) {
-	if s.HashTokenInStore {
-		token = hashToken(token)
-	}
 	c, ok := s.Store.(interface {
 		DeleteCtx(context.Context, string) error
 	})
@@ -291,23 +278,7 @@ func (s *SessionManager) doStoreDelete(ctx context.Context, token string) (err e
 	return s.Store.Delete(token)
 }
 
-func (s *SessionManager) doStoreFind(ctx context.Context, token string) (b []byte, found bool, err error) {
-	if s.HashTokenInStore {
-		token = hashToken(token)
-	}
-	c, ok := s.Store.(interface {
-		FindCtx(context.Context, string) ([]byte, bool, error)
-	})
-	if ok {
-		return c.FindCtx(ctx, token)
-	}
-	return s.Store.Find(token)
-}
-
 func (s *SessionManager) doStoreCommit(ctx context.Context, token string, b []byte, expiry time.Time) (err error) {
-	if s.HashTokenInStore {
-		token = hashToken(token)
-	}
 	c, ok := s.Store.(interface {
 		CommitCtx(context.Context, string, []byte, time.Time) error
 	})
@@ -391,4 +362,13 @@ func (s *SessionManager) GetInt(ctx context.Context, key string) int {
 		return 0
 	}
 	return i
+}
+
+/*_________________________________________Helper functions___________________________________*/
+func (s *SessionManager) addSessionDataToContext(ctx context.Context, sd *sessionData) context.Context {
+	return context.WithValue(ctx, s.contextKey, sd)
+}
+
+func (s *SessionManager) doStoreFind(token string) (b []byte, found bool, err error) {
+	return s.Store.Find(token)
 }
