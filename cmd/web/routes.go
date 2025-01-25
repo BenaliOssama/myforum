@@ -12,6 +12,8 @@ func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	// Add a new GET /ping route.
+	mux.Handle("/ping", http.HandlerFunc(ping))
 
 	mux.Handle("/", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.home))))
 	mux.Handle("/snippet/view", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.snippetView))))

@@ -3,6 +3,10 @@ run:
 	export ADDR=":9999" && go run ./cmd/web/ -addr=$$ADDR
 test:
 	go test -v ./cmd/web/
+test-all:
+	go test ./...
+test-perf:
+	go test -count=100 ./...
 push:
 	git push github
 	git push codeberg 
