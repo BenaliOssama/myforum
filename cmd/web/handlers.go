@@ -298,3 +298,8 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	// Redirect the user to the application home page.
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+// handler used  for status-checking or uptime monitoring of your server.
+func ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
+}

@@ -22,7 +22,7 @@
 To generate TLS certificates for localhost, run the following command:
 
 ```bash
-$ go run (path to go source code...)/go/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
+ go run $(go env GOROOT)/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
 ```
 ## Motivation
 

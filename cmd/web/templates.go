@@ -13,18 +13,23 @@ import (
 // to it as the build progresses.
 // Include a Snippets field in the templateData struct.
 type templateData struct {
-	CurrentYear int
-	Snippet     *models.Snippet
-	Snippets    []*models.Snippet
-	Form        any
-	Flash       string // Add a Flash field to the templateData struct.
-	IsAuthenticated bool // Add an IsAuthenticated field to the templateData struct.
+	CurrentYear     int
+	Snippet         *models.Snippet
+	Snippets        []*models.Snippet
+	Form            any
+	Flash           string // Add a Flash field to the templateData struct.
+	IsAuthenticated bool   // Add an IsAuthenticated field to the templateData struct.
 }
 
 // Create a humanDate function which returns a nicely formatted string
 // representation of a time.Time object.
 func humanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 15:04")
+	// Return the empty string if time has the zero value.
+	if t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format("02 Jan 2006 at 15:04")
+	//return t.Format("02 Jan 2006 at 15:04")
 }
 
 // Initialize a template.FuncMap object and store it in a global variable. This is
