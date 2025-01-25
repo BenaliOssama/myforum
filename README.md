@@ -18,8 +18,11 @@
 
 ## security 
 ## Generating Certificates
-
-To generate TLS certificates for localhost, run the following command:
+```bash
+   mkdir tls
+   cd tls
+```
+and then To generate TLS certificates for localhost, run the following command:
 
 ```bash
  go run $(go env GOROOT)/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
@@ -40,7 +43,11 @@ This project was inspired by Alex Edwards' "Let's Go!" book and his original **S
 - SQLite3 database.
 
 ### Installation
-
+## default configuratio
+```bash
+   make run
+```
+or: 
 1. Clone the repository:
 
    ```bash
