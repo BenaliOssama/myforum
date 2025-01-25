@@ -73,13 +73,6 @@ func (s *SessionManager) Load(ctx context.Context, token string) (context.Contex
 		return nil, err
 	}
 
-	// Mark the session data as modified if an idle timeout is being used. This
-	// will force the session data to be re-committed to the session store with
-	// a new expiry time.
-	if s.IdleTimeout > 0 {
-		sd.status = Modified
-	}
-
 	return s.addSessionDataToContext(ctx, sd), nil
 }
 
@@ -94,25 +87,19 @@ func (s *SessionManager) Commit(ctx context.Context) (string, time.Time, error) 
 	sd.mu.Lock()
 	defer sd.mu.Unlock()
 
-	if sd.token == "" {
+	if sd.token == "" { // session doesn't have a tocken, generate one
 		var err error
 		if sd.token, err = generateToken(); err != nil {
 			return "", time.Time{}, err
 		}
 	}
 
-	b, err := s.Codec.Encode(sd.deadline, sd.values)
+	b, err := s.Codec.Encode(sd.deadline, sd.values) // encode the data
 	if err != nil {
 		return "", time.Time{}, err
 	}
 
 	expiry := sd.deadline
-	if s.IdleTimeout > 0 {
-		ie := time.Now().Add(s.IdleTimeout).UTC()
-		if ie.Before(expiry) {
-			expiry = ie
-		}
-	}
 
 	if err := s.doStoreCommit(ctx, sd.token, b, expiry); err != nil {
 		return "", time.Time{}, err
@@ -239,14 +226,6 @@ func (s *SessionManager) PopString(ctx context.Context, key string) string {
 
 type contextKey string
 
-func (s *SessionManager) getSessionDataFromContext(ctx context.Context) *sessionData {
-	c, ok := ctx.Value(s.contextKey).(*sessionData)
-	if !ok {
-		panic("scs: no session data in context")
-	}
-	return c
-}
-
 func generateToken() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
@@ -276,16 +255,6 @@ func (s *SessionManager) doStoreDelete(ctx context.Context, token string) (err e
 		return c.DeleteCtx(ctx, token)
 	}
 	return s.Store.Delete(token)
-}
-
-func (s *SessionManager) doStoreCommit(ctx context.Context, token string, b []byte, expiry time.Time) (err error) {
-	c, ok := s.Store.(interface {
-		CommitCtx(context.Context, string, []byte, time.Time) error
-	})
-	if ok {
-		return c.CommitCtx(ctx, token, b, expiry)
-	}
-	return s.Store.Commit(token, b, expiry)
 }
 
 // RenewToken updates the session data to have a new session token while
@@ -371,4 +340,16 @@ func (s *SessionManager) addSessionDataToContext(ctx context.Context, sd *sessio
 
 func (s *SessionManager) doStoreFind(token string) (b []byte, found bool, err error) {
 	return s.Store.Find(token)
+}
+
+func (s *SessionManager) doStoreCommit(ctx context.Context, token string, b []byte, expiry time.Time) (err error) {
+	return s.Store.Commit(token, b, expiry)
+}
+
+func (s *SessionManager) getSessionDataFromContext(ctx context.Context) *sessionData {
+	c, ok := ctx.Value(s.contextKey).(*sessionData)
+	if !ok {
+		panic("scs: no session data in context")
+	}
+	return c
 }

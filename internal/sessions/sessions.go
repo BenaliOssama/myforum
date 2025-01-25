@@ -16,7 +16,7 @@ type SessionManager struct {
 	// before it expires. For example, some applications may wish to set this so
 	// there is a timeout after 20 minutes of inactivity. By default IdleTimeout
 	// is not set and there is no inactivity timeout.
-	IdleTimeout time.Duration
+	//IdleTimeout time.Duration
 
 	// Lifetime controls the maximum length of time that a session is valid for
 	// before it expires. The lifetime is an 'absolute expiry' which is set when
@@ -98,12 +98,11 @@ type SessionCookie struct {
 // concurrent use.
 func New(store Store) *SessionManager {
 	s := &SessionManager{
-		IdleTimeout: 0,
-		Lifetime:    24 * time.Hour,
-		Store:       store,
-		Codec:       GobCodec{},
-		ErrorFunc:   defaultErrorFunc,
-		contextKey:  generateContextKey(),
+		Lifetime:   24 * time.Hour,
+		Store:      store,
+		Codec:      GobCodec{},
+		ErrorFunc:  defaultErrorFunc,
+		contextKey: generateContextKey(),
 		Cookie: SessionCookie{
 			Name:     "session",
 			Domain:   "",
