@@ -3,6 +3,7 @@ package scs
 import (
 	"context"
 	"log"
+	"myforum/internal/sessions/memstore"
 	"net/http"
 	"time"
 )
@@ -96,10 +97,10 @@ type SessionCookie struct {
 
 // New returns a new session manager with the default options. It is safe for
 // concurrent use.
-func New(store Store) *SessionManager {
+func New() *SessionManager {
 	s := &SessionManager{
 		Lifetime:   24 * time.Hour,
-		Store:      store,
+		Store:      memstore.New(),
 		Codec:      GobCodec{},
 		ErrorFunc:  defaultErrorFunc,
 		contextKey: generateContextKey(),

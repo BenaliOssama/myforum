@@ -79,35 +79,3 @@ func (s *SessionStore) Commit(token string, data []byte, expiry time.Time) error
     `, token, data, expiry)
 	return err
 }
-
-// All retrieves all active sessions (those that have not expired)
-func (s *SessionStore) All() (map[string][]byte, error) {
-	rows, err := s.db.Query("SELECT token, data, expiry FROM sessions")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	sessions := make(map[string][]byte)
-	for rows.Next() {
-		var token string
-		var data []byte
-		var expiry time.Time
-		if err := rows.Scan(&token, &data, &expiry); err != nil {
-			return nil, err
-		}
-
-		if time.Now().After(expiry) {
-			// Skip expired sessions
-			continue
-		}
-
-		sessions[token] = data
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return sessions, nil
-}

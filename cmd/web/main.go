@@ -24,8 +24,8 @@ import (
 type application struct {
 	errorLog       *log.Logger
 	infoLog        *log.Logger
-	snippets       *models.SnippetModel
-	users          *models.UserModel
+	snippets       models.SnippetModelInterface //Interface
+	users          models.UserModelInterface    //Interface
 	templateCache  map[string]*template.Template
 	sessionManager *scs.SessionManager
 }
@@ -62,9 +62,8 @@ func main() {
 	// configure it to use our MySQL database as the session store, and set a
 	// lifetime of 12 hours (so that sessions automatically expire 12 hours
 	// after first being created).
-	sessionStore := store.New(db)
-	sessionManager := scs.New(sessionStore)
-	//sessionManager.Store = store.New(db)
+	sessionManager := scs.New()
+	sessionManager.Store = store.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 
 	// Make sure that the Secure attribute is set on our session cookies.
