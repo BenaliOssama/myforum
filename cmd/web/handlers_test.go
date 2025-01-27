@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -65,6 +66,7 @@ func TestSnippetView(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			code, _, body := ts.get(t, tt.urlPath)
+			fmt.Println(body)
 			assert.Equal(t, code, tt.wantCode)
 			if tt.wantBody != "" {
 				assert.StringContains(t, body, tt.wantBody)

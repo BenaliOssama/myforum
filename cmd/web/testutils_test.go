@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"myforum/internal/models/mocks"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 	// New import
@@ -17,6 +19,7 @@ import (
 func newTestApplication(t *testing.T) *application {
 	// Create an instance of the template cache.
 	templateCache, err := newTemplateCache()
+	fmt.Println("this is the template cach for test", templateCache)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,8 +34,10 @@ func newTestApplication(t *testing.T) *application {
 	sessionManager.Cookie.Secure = true
 
 	return &application{
-		errorLog: log.New(io.Discard, "", 0),
-		infoLog:  log.New(io.Discard, "", 0),
+		// errorLog: log.New(io.Discard, "", 0),
+		// infoLog:  log.New(io.Discard, "", 0),
+		infoLog:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
+		errorLog: log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
 		snippets: &mocks.SnippetModel{}, // Use the mock.
 		users:    &mocks.UserModel{},
 		// Use the mock.
