@@ -3,6 +3,8 @@ run:
 	export ADDR=":9999" && go run ./cmd/web/ -addr=$$ADDR
 test:
 	go test -v ./cmd/web/
+test-short:
+	go test -v -short ./...
 test-all:
 	go test -race ./...
 test-perf:
