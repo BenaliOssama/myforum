@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"os"
 	"runtime/debug"
 	"time"
 )
@@ -12,6 +13,15 @@ import (
 // for a given DSN.
 func openDB(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dsn)
+	if err != nil {
+		return nil, err
+	}
+	// Read the setup SQL script from file and execute the statements.
+	script, err := os.ReadFile("./internal/models/setup/setup.sql")
+	if err != nil {
+		return nil, err
+	}
+	_, err = db.Exec(string(script))
 	if err != nil {
 		return nil, err
 	}
